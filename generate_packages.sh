@@ -12,10 +12,11 @@ package_beat() {
   BUILD_DIR="${INSTALL_DIR}/build"
   DEBIAN_DIR="${BUILD_DIR}/${ARMHF_NAME}"
   DIST_DIR="${INSTALL_DIR}/dist"
+  OUTPUT_DEB_NAME="${BEAT}_${VERSION}_armhf.deb"
 
   # Get the beat binary for armhf (compatible with armv6l/armv7l)
   if [ ! -f "${BIN_PATH}.tar.gz" ]; then
-    wget "https://github.com/vrince/arm-beats/releases/download/v${VERSION}/${ARMHF_NAME}.tar.gz" -P "${BIN_DIR}"
+    wget "https://github.com/EffectiveRange/arm-beats/releases/download/v${VERSION}/${ARMHF_NAME}.tar.gz" -P "${BIN_DIR}"
   fi
 
   # Extract the beat armhf binary
@@ -24,11 +25,13 @@ package_beat() {
 
   mkdir -p "${DIST_DIR}"
 
+  ARM64_DEB_NAME="${BEAT}_${VERSION}_arm64.deb"
+
   # Get the official beat arm64 deb package
-  if [ ! -f "${DIST_DIR}/${BEAT}-${VERSION}-arm64.deb" ]; then
-    wget --no-clobber --continue "https://artifacts.elastic.co/downloads/beats/${BEAT}/${BEAT}-${VERSION}-arm64.deb" -P "${DIST_DIR}"
+  if [ ! -f "${DIST_DIR}/${ARM64_DEB_NAME}" ]; then
+    wget --no-clobber --continue "https://artifacts.elastic.co/downloads/beats/${BEAT}/${BEAT}-${VERSION}-arm64.deb" -O "${DIST_DIR}/${ARM64_DEB_NAME}"
   fi
-  ARM64_DEB="$(find "${DIST_DIR}" -name "${BEAT}-${VERSION}-arm64.deb" -type f -printf "%f\n" | awk 'FNR <= 1')"
+  ARM64_DEB="$(find "${DIST_DIR}" -name "${ARM64_DEB_NAME}" -type f -printf "%f\n" | awk 'FNR <= 1')"
 
   # Extract the official beat arm64 deb package
   mkdir -p "${DEBIAN_DIR}"
@@ -45,19 +48,19 @@ package_beat() {
   sed -i "s/.*usr\/share\/${BEAT}\/bin\/${BEAT}.*/${BEAT_MD5}  usr\/share\/${BEAT}\/bin\/${BEAT}/g" "${DEBIAN_DIR}/DEBIAN/md5sums"
 
   # Build the armhf beat deb package
-  cd "${BUILD_DIR}" ; dpkg-deb -Zxz --root-owner-group --build "${ARMHF_NAME}" ../dist/"${BEAT}-${VERSION}-armv7l.deb"
+  cd "${BUILD_DIR}" ; dpkg-deb -Zxz --root-owner-group --build "${ARMHF_NAME}" ../dist/"${OUTPUT_DEB_NAME}"
 }
 
 # Get the version from command line argument or use the latest release version
 if [ -z "$1" ]; then
-  VERSION=$(curl --silent -qI https://github.com/vrince/arm-beats/releases/latest \
+  VERSION=$(curl --silent -qI https://github.com/EffectiveRange/arm-beats/releases/latest \
   | awk -F '/' '/^location/ {print  substr($NF, 1, length($NF)-1)}') VERSION="${VERSION#v}"
 else
   VERSION=$1
   # Check if the specified version is available
-  HTTP_STATUS=$(curl --write-out "%{http_code}" --silent --output /dev/null "https://github.com/vrince/arm-beats/releases/tag/v${VERSION}")
+  HTTP_STATUS=$(curl --write-out "%{http_code}" --silent --output /dev/null "https://github.com/EffectiveRange/arm-beats/releases/tag/v${VERSION}")
   if [ "$HTTP_STATUS" != "200" ]; then
-    echo "Error: Version ${VERSION} is not available at https://github.com/vrince/arm-beats/releases/"
+    echo "Error: Version ${VERSION} is not available at https://github.com/EffectiveRange/arm-beats/releases/"
     exit 1
   fi
 fi
